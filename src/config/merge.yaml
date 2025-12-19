@@ -1,0 +1,38 @@
+dataset_root: ${COMP_DATA}
+output_dir: ${COMP_DATA}/embeddings/merged_v9
+
+ensure_all_relevant: true
+save_float16: true
+
+inputs:
+  - path: ${COMP_DATA}/embeddings/als_buy_add_categories
+    drop_zero_rows: true
+    steps:
+      - target: sklearn.preprocessing.Normalizer
+        params: {}
+
+  - path: ${COMP_DATA}/embeddings/als_page_sessions
+    drop_zero_rows: true
+    steps:
+      - target: sklearn.preprocessing.Normalizer
+        params: {}
+
+  - path: ${COMP_DATA}/embeddings/small_135m_vllm
+    drop_zero_rows: true
+    steps:
+      - target: sklearn.decomposition.PCA
+        params:
+          n_components: 64
+      - target: sklearn.preprocessing.Normalizer
+        params: {}
+
+  - path: ${COMP_DATA}/embeddings/lightfm/lightfm_64
+    drop_zero_rows: true
+    steps:
+      - target: sklearn.preprocessing.Normalizer
+        params: {}
+
+imputer:
+  target: sklearn.impute.SimpleImputer
+  params:
+    strategy: mean

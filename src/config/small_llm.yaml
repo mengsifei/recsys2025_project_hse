@@ -1,0 +1,14 @@
+cuda_visible_devices: "0"
+input_file: ${COMP_DATA}/text/search.jsonl
+
+model_path: /home/kaytkhadzhayev/.cache/huggingface/hub/models--HuggingFaceTB--SmolLM2-135M/snapshots/93efa2f097d58c2a74874c7e644dbc9b0cee75a2
+tokenizer_path: /home/kaytkhadzhayev/.cache/huggingface/hub/models--HuggingFaceTB--SmolLM2-135M/snapshots/93efa2f097d58c2a74874c7e644dbc9b0cee75a2
+
+output_root: ${COMP_DATA}/embeddings
+output_name: small_135m_vllm
+
+vllm:
+  gpu_memory_utilization: 0.65
+
+batch_size: 64
+max_length: 8192

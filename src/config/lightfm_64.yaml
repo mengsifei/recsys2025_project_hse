@@ -1,0 +1,13 @@
+name: lightfm_64
+data_path: ${COMP_DATA}
+save_path: ${COMP_DATA}
+save_dir_name: lightfm
+
+loss: warp
+no_components: 64
+epoch: 20
+num_threads: 32
+
+buy_weight: 1.0
+cart_weight: 0.7
+remove_weight: -0.5

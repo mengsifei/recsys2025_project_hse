@@ -1,0 +1,3 @@
+dataset_root: ${COMP_DATA}
+output_file: all_interactions_64.parquet
+per_user_limit: 64

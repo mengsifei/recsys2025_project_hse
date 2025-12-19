@@ -1,0 +1,7 @@
+name: buy_add_categories
+cuda_visible_devices: "0"
+data_path: ${COMP_DATA}
+save_path: ${COMP_DATA}
+als_factors: 64
+col: category
+pad_missing_relevant_clients: true
