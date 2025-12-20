@@ -31,6 +31,15 @@ inputs:
     steps:
       - target: sklearn.preprocessing.Normalizer
         params: {}
+  
+  - path: ${COMP_DATA}/embeddings/km_catgraph_256
+    drop_zero_rows: true
+    steps:
+      - target: sklearn.decomposition.PCA
+        params: { n_components: 64 }
+      - target: sklearn.preprocessing.Normalizer
+        params: {}
+
 
 imputer:
   target: sklearn.impute.SimpleImputer

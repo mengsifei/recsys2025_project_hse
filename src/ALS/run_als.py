@@ -67,7 +67,7 @@ class ALSEmbeddingJob:
         os.environ["CUDA_VISIBLE_DEVICES"] = str(self.cfg.cuda_visible_devices)
         data = UBCData.from_disk(self.cfg.data_path, self.cfg.data_path)
         df = self._make_interactions(data)
-        client_ids, user_factors = self._als_fit(df)
+        client_ids, user_factors, item_vocab, item_factors = self._als_fit(df)
         client_ids, user_factors = self._restrict_to_relevant(
             client_ids=client_ids,
             user_factors=user_factors,
@@ -75,7 +75,7 @@ class ALSEmbeddingJob:
             pad_missing=self.cfg.pad_missing_relevant_clients,
         )
         out_dir = Path(self.cfg.save_path) / "embeddings" / self.cfg.name
-        self._save(out_dir, client_ids, user_factors)
+        self._save(out_dir, client_ids, user_factors, item_vocab, item_factors)
 
     def _make_interactions(self, data: UBCData) -> pd.DataFrame:
         if self.cfg.col == "url":
@@ -110,7 +110,9 @@ class ALSEmbeddingJob:
 
         model.fit(mat)
         user_factors = np.asarray(model.user_factors, dtype=np.float32)
-        return user_vocab, user_factors
+        item_factors = np.asarray(model.item_factors, dtype=np.float32)
+
+        return user_vocab, user_factors, item_vocab, item_factors
 
     @staticmethod
     def _encode(s: pd.Series) -> Tuple[np.ndarray, np.ndarray]:
@@ -138,10 +140,14 @@ class ALSEmbeddingJob:
         return kept_ids, kept_factors
 
     @staticmethod
-    def _save(out_dir: Path, client_ids: np.ndarray, user_factors: np.ndarray) -> None:
+    def _save(out_dir: Path, client_ids: np.ndarray, user_factors: np.ndarray, item_vocab: np.ndarray, item_factors: np.ndarray) -> None:
         out_dir.mkdir(parents=True, exist_ok=True)
         np.save(out_dir / "embeddings.npy", user_factors.astype(np.float16, copy=False))
         np.save(out_dir / "client_ids.npy", client_ids)
+        
+        np.save(out_dir / "item_ids.npy", item_vocab)
+        np.save(out_dir / "item_factors.npy", item_factors.astype(np.float16, copy=False))
+
 
 
 def build_argparser() -> argparse.ArgumentParser:

@@ -114,7 +114,9 @@ def _build_mappings(table: pd.DataFrame, cfg: LightFMRunConfig) -> Tuple[Dataset
     user_map = ds.mapping()[0]
     item_map = ds.mapping()[2]
     inv_user_map = {v: k for k, v in user_map.items()}
-    return ds, user_map, item_map, inv_user_map
+    inv_item_map = {v: k for k, v in item_map.items()}
+
+    return ds, user_map, item_map, inv_user_map, inv_item_map
 
 
 def _item_side_features(root_dir: Path, item_map: Dict[Any, int], allowed_items: np.ndarray) -> sparse.csr_matrix:
@@ -166,9 +168,17 @@ def _extract_embeddings(model: LightFM, inv_user_map: Dict[int, Any], keep_users
     mask = np.isin(original_ids, keep_users)
     return original_ids[mask], factors[mask]
 
+def _extract_item_factors(model: LightFM, inv_item_map: Dict[int, Any], item_feats: sparse.csr_matrix) -> Tuple[np.ndarray, np.ndarray]:
+    item_factors = np.asarray(model.get_item_representations(item_features=item_feats)[1], dtype=np.float32)
+    item_ids = np.array([inv_item_map[i] for i in range(item_factors.shape[0])], dtype=np.int64)
+    return item_ids, item_factors
 
-def _save_outputs(out_dir: Path, user_ids: np.ndarray, embeds: np.ndarray) -> None:
+
+def _save_outputs(out_dir: Path, user_ids: np.ndarray, embeds: np.ndarray, item_ids: np.ndarray, item_factors: np.ndarray) -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
+    np.save(out_dir / "item_ids.npy", item_ids)
+    np.save(out_dir / "item_factors.npy", item_factors.astype(np.float16, copy=False))
+
     np.save(out_dir / "client_ids.npy", user_ids.astype(np.int64, copy=False))
     np.save(out_dir / "embeddings.npy", embeds.astype(np.float16, copy=False))
 
@@ -197,7 +207,7 @@ def main():
     buy_df, rem_df, add_df = _read_events(base_dir)
     interactions = _aggregate_interactions(buy_df, rem_df, add_df, keep_users, cfg)
 
-    ds, user_map, item_map, inv_user_map = _build_mappings(interactions, cfg)
+    ds, user_map, item_map, inv_user_map, inv_item_map = _build_mappings(interactions, cfg)
 
     items_used = interactions[cfg.item_col].unique()
     users_used = interactions[cfg.user_col].unique()
@@ -219,12 +229,13 @@ def main():
     )
 
     user_ids, embeds = _extract_embeddings(model, inv_user_map, keep_users)
-
+    item_ids, item_factors = _extract_item_factors(model, inv_item_map, item_feats)
+    
     out_dir = Path(cfg.save_path) / "embeddings" / cfg.save_dir_name
     if cfg.name:
         out_dir = out_dir / cfg.name
 
-    _save_outputs(out_dir, user_ids, embeds)
+    _save_outputs(out_dir, user_ids, embeds, item_ids, item_factors)
 
 
 if __name__ == "__main__":
